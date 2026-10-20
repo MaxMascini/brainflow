@@ -19,6 +19,8 @@ struct SerialPortInfo
 
 // list usb serial ports of this machine with their usb ids
 std::vector<SerialPortInfo> list_serial_ports ();
+// parses vid and pid from windows hardware id like USB\VID_0403&PID_6015
+bool parse_hardware_id (const std::string &hw_id, int &vid, int &pid);
 // linux implementation, tty_dir is usually /sys/class/tty
 std::vector<SerialPortInfo> list_serial_ports_sysfs (const std::string &tty_dir);
 std::vector<std::string> filter_serial_ports (

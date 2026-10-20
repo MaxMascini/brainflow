@@ -28,6 +28,7 @@ SET (BOARD_CONTROLLER_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/os_serial.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/os_serial_ioctl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/serial.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/serial_ports.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/libftdi_serial.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/socket_client_tcp.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/socket_client_udp.cpp
@@ -207,6 +208,10 @@ if (BUILD_PERIPHERY)
     include_directories (${CMAKE_CURRENT_SOURCE_DIR}/third_party/periphery)
     target_link_libraries (${BOARD_CONTROLLER_NAME} PRIVATE periphery ${CMAKE_THREAD_LIBS_INIT} dl)
 endif (BUILD_PERIPHERY)
+
+if (APPLE AND NOT BRAINFLOW_IOS)
+    target_link_libraries (${BOARD_CONTROLLER_NAME} PRIVATE "-framework IOKit" "-framework CoreFoundation")
+endif (APPLE AND NOT BRAINFLOW_IOS)
 
 if (BRAINFLOW_COPY_TO_PACKAGE_DIRS AND MSVC)
     add_custom_command (TARGET ${BOARD_CONTROLLER_NAME} POST_BUILD

@@ -55,6 +55,10 @@ target_link_libraries(
     gmock_main
 )
 
+if (APPLE)
+    target_link_libraries (${TESTS_EXE_NAME} PRIVATE "-framework IOKit" "-framework CoreFoundation")
+endif (APPLE)
+
 set_target_properties (${TESTS_EXE_NAME}
     PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/tests

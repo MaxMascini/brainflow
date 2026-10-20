@@ -93,6 +93,68 @@ TEST (SerialPortsTest, PickSerialPort_SeveralCandidates_ReturnsErrorAndKeepsPort
     EXPECT_EQ (port, "");
 }
 
+TEST (SerialPortsTest, ParseHardwareId_UsbStyle_ExtractsIds)
+{
+    int vid = -1;
+    int pid = -1;
+
+    EXPECT_TRUE (parse_hardware_id ("USB\\VID_0403&PID_6015&REV_1000", vid, pid));
+    EXPECT_EQ (vid, 0x0403);
+    EXPECT_EQ (pid, 0x6015);
+}
+
+TEST (SerialPortsTest, ParseHardwareId_FtdiBusStyle_ExtractsIds)
+{
+    int vid = -1;
+    int pid = -1;
+
+    EXPECT_TRUE (parse_hardware_id ("FTDIBUS\\COMPORT&VID_0403&PID_6015", vid, pid));
+    EXPECT_EQ (vid, 0x0403);
+    EXPECT_EQ (pid, 0x6015);
+}
+
+TEST (SerialPortsTest, ParseHardwareId_LowerCaseHex_ExtractsIds)
+{
+    int vid = -1;
+    int pid = -1;
+
+    EXPECT_TRUE (parse_hardware_id ("usb\\vid_2458&pid_000a", vid, pid));
+    EXPECT_EQ (vid, 0x2458);
+    EXPECT_EQ (pid, 0x000a);
+}
+
+TEST (SerialPortsTest, ParseHardwareId_NoIds_ReturnsFalse)
+{
+    int vid = -1;
+    int pid = -1;
+
+    EXPECT_FALSE (parse_hardware_id ("ACPI\\PNP0501", vid, pid));
+}
+
+TEST (SerialPortsTest, ListSerialPorts_RealMachine_EveryEntryHasUsbIds)
+{
+    std::vector<SerialPortInfo> ports = list_serial_ports ();
+
+    for (const SerialPortInfo &info : ports)
+    {
+        EXPECT_FALSE (info.port.empty ());
+        EXPECT_GE (info.vid, 0);
+        EXPECT_GE (info.pid, 0);
+    }
+}
+
+#ifdef __APPLE__
+TEST (SerialPortsTest, ListSerialPorts_OnMac_ReturnsCalloutDevices)
+{
+    std::vector<SerialPortInfo> ports = list_serial_ports ();
+
+    for (const SerialPortInfo &info : ports)
+    {
+        EXPECT_EQ (info.port.rfind ("/dev/cu.", 0), 0u) << info.port;
+    }
+}
+#endif
+
 #ifdef __linux__
 
 static int remove_entry (const char *path, const struct stat *, int, struct FTW *)

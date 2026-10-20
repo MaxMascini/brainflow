@@ -55,6 +55,8 @@ extern "C"
     SHARED_EXPORT int CALLING_CONVENTION java_set_jnienv (JNIEnv *java_jnienv);
     SHARED_EXPORT int CALLING_CONVENTION get_version_board_controller (
         char *version, int *num_chars, int max_chars);
+    SHARED_EXPORT int CALLING_CONVENTION get_serial_ports (
+        int board_id, char *ports, int *len, int max_len);
 
 #ifdef __cplusplus
 }

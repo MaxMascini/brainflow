@@ -428,6 +428,15 @@ class BoardControllerDLL(object):
             ctypes.c_int
         ]
 
+        self.get_serial_ports = self.lib.get_serial_ports
+        self.get_serial_ports.restype = ctypes.c_int
+        self.get_serial_ports.argtypes = [
+            ctypes.c_int,
+            ndpointer(ctypes.c_ubyte),
+            ndpointer(ctypes.c_int32),
+            ctypes.c_int
+        ]
+
         self.get_board_descr = self.lib.get_board_descr
         self.get_board_descr.restype = ctypes.c_int
         self.get_board_descr.argtypes = [
@@ -850,6 +859,24 @@ class BoardShim(object):
         if res != BrainFlowExitCodes.STATUS_OK.value:
             raise BrainFlowError('unable to request info', res)
         return string.tobytes().decode('utf-8')[0:string_len[0]]
+
+    @classmethod
+    def get_serial_ports(cls, board_id: int) -> List[str]:
+        """get serial ports of connected devices matching usb ids of this board's dongle
+
+        :param board_id: Board Id
+        :type board_id: int
+        :return: list of serial ports, empty if nothing found or board can't be detected by usb id
+        :rtype: List[str]
+        :raises BrainFlowError: In case of internal error or invalid args
+        """
+        string = numpy.zeros(4096).astype(numpy.ubyte)
+        string_len = numpy.zeros(1).astype(numpy.int32)
+        res = BoardControllerDLL.get_instance().get_serial_ports(board_id, string, string_len, string.size)
+        if res != BrainFlowExitCodes.STATUS_OK.value:
+            raise BrainFlowError('unable to request serial ports', res)
+        ports = string.tobytes().decode('utf-8')[0:string_len[0]]
+        return ports.split(',') if ports else []
 
     @classmethod
     def get_board_descr(cls, board_id: int, preset: int = BrainFlowPresets.DEFAULT_PRESET):

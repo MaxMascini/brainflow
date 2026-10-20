@@ -3,8 +3,9 @@ import unittest
 
 import numpy as np
 
+from brainflow.board_shim import BoardControllerDLL, BoardIds, BoardShim, BrainFlowInputParams
 from brainflow.data_filter import DataFilter, DetrendOperations, FilterTypes, StreamingFilter, WaveletTypes, WindowOperations
-from brainflow.exit_codes import BrainFlowError
+from brainflow.exit_codes import BrainFlowError, BrainFlowExitCodes
 
 
 class BindingValidationRegression(unittest.TestCase):
@@ -178,6 +179,31 @@ class BindingValidationRegression(unittest.TestCase):
         self.assertGreater(margin, 0)
         with self.assertRaises(BrainFlowError):
             DataFilter.get_filter_settling_samples(0, 256, low_cutoff=200.)
+
+
+class SerialPortsRegression(unittest.TestCase):
+    def test_get_serial_ports_returns_list(self):
+        ports = BoardShim.get_serial_ports(BoardIds.CYTON_BOARD.value)
+        self.assertIsInstance(ports, list)
+        for port in ports:
+            self.assertIsInstance(port, str)
+            self.assertTrue(port)
+
+    def test_get_serial_ports_board_without_ids_is_empty(self):
+        self.assertEqual(BoardShim.get_serial_ports(BoardIds.SYNTHETIC_BOARD.value), [])
+
+    def test_get_serial_ports_zero_buffer_is_rejected(self):
+        string = np.zeros(1).astype(np.ubyte)
+        string_len = np.zeros(1).astype(np.int32)
+        res = BoardControllerDLL.get_instance().get_serial_ports(
+            BoardIds.CYTON_BOARD.value, string, string_len, 0)
+        self.assertEqual(res, BrainFlowExitCodes.INVALID_ARGUMENTS_ERROR.value)
+
+    def test_blank_port_on_board_without_ids_still_prepares(self):
+        board = BoardShim(BoardIds.SYNTHETIC_BOARD.value, BrainFlowInputParams())
+        board.prepare_session()
+        self.assertTrue(board.is_prepared())
+        board.release_session()
 
 
 if __name__ == '__main__':

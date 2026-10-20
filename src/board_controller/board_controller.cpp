@@ -53,6 +53,7 @@
 #include "ntl_wifi.h"
 #include "pieeg_board.h"
 #include "playback_file_board.h"
+#include "serial_ports.h"
 #include "shimmer3.h"
 #include "streaming_board.h"
 #include "synchroni_board.h"
@@ -77,6 +78,7 @@ static int string_to_brainflow_input_params (
     const char *json_brainflow_input_params, struct BrainFlowInputParams *params);
 static int copy_string_to_buffer (
     const std::string &source, char *destination, int *destination_len, int max_len);
+static int autodetect_serial_port (int board_id, struct BrainFlowInputParams &params);
 
 
 int prepare_session (int board_id, const char *json_brainflow_input_params)
@@ -86,6 +88,11 @@ int prepare_session (int board_id, const char *json_brainflow_input_params)
     Board::board_logger->info ("incoming json: {}", json_brainflow_input_params);
     struct BrainFlowInputParams params;
     int res = string_to_brainflow_input_params (json_brainflow_input_params, &params);
+    if (res != (int)BrainFlowExitCodes::STATUS_OK)
+    {
+        return res;
+    }
+    res = autodetect_serial_port (board_id, params);
     if (res != (int)BrainFlowExitCodes::STATUS_OK)
     {
         return res;
@@ -656,9 +663,57 @@ int get_version_board_controller (char *version, int *num_chars, int max_chars)
     return (int)BrainFlowExitCodes::STATUS_OK;
 }
 
+static std::string join_ports (const std::vector<std::string> &ports)
+{
+    std::string res;
+    for (size_t i = 0; i < ports.size (); i++)
+    {
+        res += (i == 0) ? ports[i] : "," + ports[i];
+    }
+    return res;
+}
+
+int get_serial_ports (int board_id, char *ports, int *len, int max_len)
+{
+    std::vector<std::string> candidates =
+        filter_serial_ports (list_serial_ports (), get_board_usb_ids (board_id));
+    return copy_string_to_buffer (join_ports (candidates), ports, len, max_len);
+}
+
 /////////////////////////////////////////////////
 //////////////////// helpers ////////////////////
 /////////////////////////////////////////////////
+
+int autodetect_serial_port (int board_id, struct BrainFlowInputParams &params)
+{
+    std::vector<UsbId> ids = get_board_usb_ids (board_id);
+    if ((!params.serial_port.empty ()) || (ids.empty ()))
+    {
+        return (int)BrainFlowExitCodes::STATUS_OK;
+    }
+    std::vector<std::string> candidates = filter_serial_ports (list_serial_ports (), ids);
+    int res = pick_serial_port (candidates, params.serial_port);
+    if (candidates.empty ())
+    {
+        Board::board_logger->error ("serial port not set and no device with usb id {:04x}:{:04x} "
+                                    "found for board {}, set serial_port explicitly",
+            ids[0].vid, ids[0].pid, board_id);
+    }
+    else if (res != (int)BrainFlowExitCodes::STATUS_OK)
+    {
+        Board::board_logger->error (
+            "serial port not set and found {} devices with usb id {:04x}:{:04x} for board {}: "
+            "{}. Other adapters with the same usb chip match too, set serial_port explicitly",
+            candidates.size (), ids[0].vid, ids[0].pid, board_id, join_ports (candidates));
+    }
+    else
+    {
+        Board::board_logger->warn ("serial port not set, using {} (matched by usb id "
+                                   "{:04x}:{:04x} only)",
+            params.serial_port, ids[0].vid, ids[0].pid);
+    }
+    return res;
+}
 
 std::pair<int, struct BrainFlowInputParams> get_key (
     int board_id, struct BrainFlowInputParams params)

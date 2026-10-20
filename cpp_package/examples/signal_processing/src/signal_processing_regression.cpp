@@ -4,6 +4,7 @@
 #include <limits>
 #include <stdexcept>
 
+#include "board_shim.h"
 #include "data_filter.h"
 
 static void reject (const std::function<void ()> &action)
@@ -71,5 +72,10 @@ int main ()
     lengths[0]++;
     reject (
         [&] { DataFilter::perform_inverse_wavelet_transform (coefficients, lengths, 256, 3, 3); });
+    if (!BoardShim::get_serial_ports ((int)BoardIds::SYNTHETIC_BOARD).empty ())
+        throw std::runtime_error ("Synthetic board must not match serial ports");
+    for (const std::string &port : BoardShim::get_serial_ports ((int)BoardIds::CYTON_BOARD))
+        if (port.empty ())
+            throw std::runtime_error ("Empty serial port name");
     std::cout << "Signal-processing binding validation passed." << std::endl;
 }

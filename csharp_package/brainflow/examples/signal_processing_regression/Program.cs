@@ -53,6 +53,11 @@ class Program
         Reject(() => new MLModel(null));
         if (args.Length > 0)
             CheckMLSnapshot(args[0]);
+        if (BoardShim.get_serial_ports((int)BoardIds.SYNTHETIC_BOARD).Length != 0)
+            throw new Exception("Synthetic board must not match serial ports");
+        foreach (string port in BoardShim.get_serial_ports((int)BoardIds.CYTON_BOARD))
+            if (string.IsNullOrEmpty(port))
+                throw new Exception("Empty serial port name");
         Console.WriteLine("Signal-processing binding validation passed.");
     }
 }

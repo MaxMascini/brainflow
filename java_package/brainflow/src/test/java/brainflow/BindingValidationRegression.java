@@ -93,6 +93,17 @@ public class BindingValidationRegression
                 }
             }
         }
+        if (BoardShim.get_serial_ports (BoardIds.SYNTHETIC_BOARD).length != 0)
+        {
+            throw new AssertionError ("Synthetic board must not match serial ports");
+        }
+        for (String port : BoardShim.get_serial_ports (BoardIds.CYTON_BOARD))
+        {
+            if (port.isEmpty ())
+            {
+                throw new AssertionError ("Empty serial port name");
+            }
+        }
         System.out.println ("Binding validation regressions passed");
     }
 }

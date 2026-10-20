@@ -172,6 +172,15 @@ end
     return sub_string
 end
 
+@brainflow_rethrow function get_serial_ports(board_id::BoardIdType)
+    ports_string = Vector{Cuchar}(undef, 4096)
+    len = Vector{Cint}(undef, 1)
+    ccall((:get_serial_ports, BOARD_CONTROLLER_INTERFACE), Cint, (Cint, Ptr{UInt8}, Ptr{Cint}, Cint),
+            Int32(board_id), ports_string, len, length(ports_string))
+    sub_string = String(ports_string)[1:len[1]]
+    return isempty(sub_string) ? String[] : String.(split(sub_string, ','))
+end
+
 @brainflow_rethrow function release_all_sessions()
     ccall((:release_all_sessions, BOARD_CONTROLLER_INTERFACE), Cint, ())
 end

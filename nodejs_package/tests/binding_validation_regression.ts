@@ -1,5 +1,5 @@
 import assert from 'assert';
-import {DataFilter, BrainFlowError, WaveletTypes, WaveletExtensionTypes, WindowOperations} from 'brainflow';
+import {BoardIds, BoardShim, DataFilter, BrainFlowError, WaveletTypes, WaveletExtensionTypes, WindowOperations} from 'brainflow';
 
 assert.throws(() => DataFilter.getBandPower([[1, 1], [0]], 0, 1), BrainFlowError);
 assert.throws(() => DataFilter.calcStddev([1, 2], 0, 3), BrainFlowError);
@@ -48,3 +48,6 @@ assert.ok(restored.every((value, i) => Math.abs(value - signal[i]) < 1e-10));
 assert.throws(() => DataFilter.performInverseWaveletTransform(
     transformed, 64, WaveletTypes.DB3, 2, WaveletExtensionTypes.SYMMETRIC), BrainFlowError);
 console.log('Binding validation regressions passed');
+
+assert.deepStrictEqual(BoardShim.getSerialPorts(BoardIds.SYNTHETIC_BOARD), []);
+assert.ok(Array.isArray(BoardShim.getSerialPorts(BoardIds.CYTON_BOARD)));

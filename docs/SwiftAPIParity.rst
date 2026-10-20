@@ -20,6 +20,7 @@ Implemented:
   :code:`config_board`, and :code:`config_board_with_bytes`.
 - Metadata: sampling rate, package/timestamp/marker/battery rows, row count, EEG names, board
   presets, board description, device name, and all channel getters exposed by the C ABI.
+- Serial port discovery: :code:`get_serial_ports`.
 - Logging and version APIs: board logger controls, log file, log message, and version.
 
 DataFilter

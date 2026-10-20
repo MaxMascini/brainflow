@@ -219,6 +219,8 @@ namespace brainflow
         [DllImport ("BoardController", SetLastError = true, CallingConvention = CallingConvention.Cdecl)]
         public static extern int get_version_board_controller (byte[] version, int[] len, int max_len);
         [DllImport ("BoardController", SetLastError = true, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int get_serial_ports (int board_id, byte[] ports, int[] len, int max_len);
+        [DllImport ("BoardController", SetLastError = true, CallingConvention = CallingConvention.Cdecl)]
         public static extern int get_board_presets (int board_id, int[] names, int[] len);
         [DllImport ("BoardController", SetLastError = true, CallingConvention = CallingConvention.Cdecl)]
         public static extern int add_streamer (string streamer, int preset, int board_id, string input_json);
@@ -310,6 +312,8 @@ namespace brainflow
         public static extern int release_all_sessions ();
         [DllImport ("BoardController32", SetLastError = true, CallingConvention = CallingConvention.Cdecl)]
         public static extern int get_version_board_controller (byte[] version, int[] len, int max_len);
+        [DllImport ("BoardController32", SetLastError = true, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int get_serial_ports (int board_id, byte[] ports, int[] len, int max_len);
         [DllImport ("BoardController32", SetLastError = true, CallingConvention = CallingConvention.Cdecl)]
         public static extern int get_board_presets (int board_id, int[] names, int[] len);
         [DllImport ("BoardController32", SetLastError = true, CallingConvention = CallingConvention.Cdecl)]
@@ -683,6 +687,19 @@ namespace brainflow
                     return BoardControllerLibrary64.get_version_board_controller (version, len, max_len);
                 case LibraryEnvironment.x86:
                     return BoardControllerLibrary32.get_version_board_controller (version, len, max_len);
+            }
+
+            return (int)BrainFlowExitCodes.GENERAL_ERROR;
+        }
+
+        public static int get_serial_ports (int board_id, byte[] ports, int[] len, int max_len)
+        {
+            switch (PlatformHelper.get_library_environment ())
+            {
+                case LibraryEnvironment.x64:
+                    return BoardControllerLibrary64.get_serial_ports (board_id, ports, len, max_len);
+                case LibraryEnvironment.x86:
+                    return BoardControllerLibrary32.get_serial_ports (board_id, ports, len, max_len);
             }
 
             return (int)BrainFlowExitCodes.GENERAL_ERROR;

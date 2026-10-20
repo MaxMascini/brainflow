@@ -28,6 +28,11 @@ final class BrainFlowTests: XCTestCase {
         }
     }
 
+    func testSerialPortsForBoardWithoutUsbIdsIsEmpty() throws {
+        try requireNativeLibraries()
+        XCTAssertEqual(try BoardShim.get_serial_ports(board_id: BoardIds.SYNTHETIC_BOARD), [])
+    }
+
     func testInputParamsJSON() throws {
         var params = BrainFlowInputParams()
         params.serial_port = "/dev/ttyUSB0"

@@ -213,6 +213,12 @@ public:
     /// get brainflow version
     static std::string get_version ();
     /**
+     * get serial ports of connected devices matching usb ids of this board's dongle
+     * @param board_id board id of your device
+     * @return empty if nothing found or board can't be detected by usb id
+     */
+    static std::vector<std::string> get_serial_ports (int board_id);
+    /**
      * get available presets for this board
      * @param board_id board id of your device
      * @throw BrainFlowException

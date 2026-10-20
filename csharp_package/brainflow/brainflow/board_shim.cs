@@ -274,6 +274,28 @@ namespace brainflow
         }
 
         /// <summary>
+        /// get serial ports of connected devices matching usb ids of this board's dongle
+        /// </summary>
+        /// <param name="board_id"></param>
+        /// <returns>serial ports, empty if nothing found or board can't be detected by usb id</returns>
+        /// <exception cref="BrainFlowException"></exception>
+        public static string[] get_serial_ports (int board_id)
+        {
+            int[] len = new int[1];
+            byte[] str = new byte[4096];
+            int res = BoardControllerLibrary.get_serial_ports (board_id, str, len, str.Length);
+            if (res != (int)BrainFlowExitCodes.STATUS_OK)
+            {
+                throw new BrainFlowError (res);
+            }
+            if (len[0] == 0)
+            {
+                return new string[0];
+            }
+            return System.Text.Encoding.UTF8.GetString (str, 0, len[0]).Split (',');
+        }
+
+        /// <summary>
         /// get row indices of EEG channels for this board, for some board we can not split EMG\EEG\.. data and return the same array for all of them
         /// </summary>
         /// <param name="board_id"></param>

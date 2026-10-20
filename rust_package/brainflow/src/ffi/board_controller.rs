@@ -352,3 +352,11 @@ extern "C" {
         max_chars: ::std::os::raw::c_int,
     ) -> ::std::os::raw::c_int;
 }
+extern "C" {
+    pub fn get_serial_ports(
+        board_id: ::std::os::raw::c_int,
+        ports: *mut ::std::os::raw::c_char,
+        len: *mut ::std::os::raw::c_int,
+        max_len: ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int;
+}

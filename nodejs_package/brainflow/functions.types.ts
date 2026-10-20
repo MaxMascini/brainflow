@@ -22,6 +22,8 @@ export enum BoardControllerCLikeFunctions {
         'int log_message_board_controller (int log_level, char *log_message)',
     get_version_board_controller =
         'int get_version_board_controller (_Inout_ char *version, _Inout_ int *len, int max)',
+    get_serial_ports =
+        'int get_serial_ports (int board_id, _Inout_ char *ports, _Inout_ int *len, int max_len)',
     // board methods
     start_stream =
         'int start_stream (int buffer_size, const char *streamer_params, int board_id, const char *json_brainflow_input_params)',
@@ -109,6 +111,12 @@ export class BoardControllerFunctions
     logMessageBoardController!: (logLevel: LogLevels, logMessage: string) => BrainFlowExitCodes;
     getVersionBoardController!: (
         version: string[],
+        len: number[],
+        maxLen: number,
+        ) => BrainFlowExitCodes;
+    getSerialPorts!: (
+        boardId: BoardIds,
+        ports: string[],
         len: number[],
         maxLen: number,
         ) => BrainFlowExitCodes;

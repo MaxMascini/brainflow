@@ -629,3 +629,24 @@ std::string BoardShim::get_version ()
 
     return verion_str;
 }
+
+std::vector<std::string> BoardShim::get_serial_ports (int board_id)
+{
+    char ports[4096];
+    int string_len = 0;
+    int res = ::get_serial_ports (board_id, ports, &string_len, sizeof (ports));
+    if (res != (int)BrainFlowExitCodes::STATUS_OK)
+    {
+        throw BrainFlowException ("failed to get serial ports", res);
+    }
+    std::string line (ports, 0, string_len);
+    std::istringstream ss (line);
+    std::vector<std::string> out;
+    std::string single_port;
+    while (std::getline (ss, single_port, ','))
+    {
+        out.push_back (single_port);
+    }
+
+    return out;
+}

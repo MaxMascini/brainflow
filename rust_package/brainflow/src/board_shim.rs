@@ -463,6 +463,32 @@ pub fn get_version() -> Result<String> {
     Ok(version.to_string())
 }
 
+/// Get serial ports of connected devices matching usb ids of this board's dongle.
+/// Empty if nothing found or board can't be detected by usb id.
+pub fn get_serial_ports(board_id: BoardIds) -> Result<Vec<String>> {
+    const MAX_CHARS: usize = 4096;
+    let mut response_len = 0;
+    let mut result_char_buffer: [c_char; MAX_CHARS] = [0; MAX_CHARS];
+    let (res, response) = unsafe {
+        let res = board_controller::get_serial_ports(
+            board_id as c_int,
+            result_char_buffer.as_mut_ptr(),
+            &mut response_len,
+            MAX_CHARS as c_int,
+        );
+        let response = CStr::from_ptr(result_char_buffer.as_ptr());
+        (res, response)
+    };
+    check_brainflow_exit_code(res)?;
+    let ports = response.to_str()?;
+
+    Ok(ports
+        .split(',')
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string())
+        .collect::<Vec<String>>())
+}
+
 /// Get device name.
 pub fn get_device_name(board_id: BoardIds, preset: BrainFlowPresets) -> Result<String> {
     const MAX_CHARS: usize = 4096;
@@ -579,7 +605,7 @@ mod tests {
     mod functions {
         use crate::test_helpers::assertions::assert_regex_matches;
         use crate::test_helpers::consts::VERSION_PATTERN;
-        use crate::board_shim::{get_version, get_device_name, get_eeg_names, get_board_descr};
+        use crate::board_shim::{get_version, get_device_name, get_eeg_names, get_board_descr, get_serial_ports};
         use crate::{BoardIds, BrainFlowPresets};
 
         #[test]
@@ -597,6 +623,11 @@ mod tests {
             assert_eq!(vec!["Fz", "C3", "Cz", "C4", "Pz", "PO7", "Oz", "PO8", "F5", "F7", "F3", "F1", "F2", "F4", "F6", "F8"],
                        get_eeg_names(BoardIds::SyntheticBoard, BrainFlowPresets::DefaultPreset).unwrap());
 
+        }
+
+        #[test]
+        fn test_get_serial_ports_board_without_usb_ids_is_empty() {
+            assert!(get_serial_ports(BoardIds::SyntheticBoard).unwrap().is_empty());
         }
 
         #[test]

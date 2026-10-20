@@ -191,6 +191,20 @@ classdef BoardShim
             BoardShim.check_ec(exit_code, task_name);
         end
 
+        function ports = get_serial_ports(board_id)
+            % get serial ports of connected devices matching usb ids of board's dongle
+            task_name = 'get_serial_ports';
+            lib_name = BoardShim.load_lib();
+            str_len = libpointer('int32Ptr', 0);
+            [exit_code, ports] = calllib(lib_name, task_name, board_id, blanks(4096), str_len, 4096);
+            BoardShim.check_ec(exit_code, task_name);
+            if str_len.Value == 0
+                ports = {};
+                return;
+            end
+            ports = split(extractBefore(ports, str_len.Value + 1), ',');
+        end
+
         function device_name = get_device_name(board_id, preset)
             % get device name for provided board id
             task_name = 'get_device_name';

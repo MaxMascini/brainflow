@@ -32,3 +32,8 @@ using BrainFlow
     BrainFlow.detrend(expected, BrainFlow.CONSTANT)
     @test view_to_process == expected
 end
+
+@testset "Serial ports" begin
+    @test BrainFlow.get_serial_ports(BrainFlow.SYNTHETIC_BOARD) == String[]
+    @test BrainFlow.get_serial_ports(BrainFlow.CYTON_BOARD) isa Vector{String}
+end

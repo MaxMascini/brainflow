@@ -113,6 +113,8 @@ public class BoardShim
         int get_board_presets (int board_id, int[] presets, int[] len);
 
         int get_version_board_controller (byte[] version, int[] len, int max_len);
+
+        int get_serial_ports (int board_id, byte[] ports, int[] len, int max_len);
     }
 
     private static DllInterface instance;
@@ -674,6 +676,35 @@ public class BoardShim
         }
         String version = new String (str, 0, len[0]);
         return version;
+    }
+
+    /**
+     * Get serial ports of connected devices matching usb ids of this board's
+     * dongle, empty if nothing found or board can't be detected by usb id
+     */
+    public static String[] get_serial_ports (int board_id) throws BrainFlowError
+    {
+        int[] len = new int[1];
+        byte[] str = new byte[4096];
+        int ec = instance.get_serial_ports (board_id, str, len, str.length);
+        if (ec != BrainFlowExitCode.STATUS_OK.get_code ())
+        {
+            throw new BrainFlowError ("Error in get_serial_ports", ec);
+        }
+        if (len[0] == 0)
+        {
+            return new String[0];
+        }
+        return new String (str, 0, len[0]).split (",");
+    }
+
+    /**
+     * Get serial ports of connected devices matching usb ids of this board's
+     * dongle, empty if nothing found or board can't be detected by usb id
+     */
+    public static String[] get_serial_ports (BoardIds board_id) throws BrainFlowError
+    {
+        return get_serial_ports (board_id.get_code ());
     }
 
     /**

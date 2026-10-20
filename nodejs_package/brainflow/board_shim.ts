@@ -106,6 +106,7 @@ class BoardControllerDLL extends BoardControllerFunctions
         this.setLogFileBoardController = this.lib.func(CLike.set_log_file_board_controller);
         this.logMessageBoardController = this.lib.func(CLike.log_message_board_controller);
         this.getVersionBoardController = this.lib.func(CLike.get_version_board_controller);
+        this.getSerialPorts = this.lib.func(CLike.get_serial_ports);
         this.getDeviceName = this.lib.func(CLike.get_device_name);
         this.getBoardPresets = this.lib.func(CLike.get_board_presets);
         this.getEegNames = this.lib.func(CLike.get_eeg_names);
@@ -185,6 +186,20 @@ export class BoardShim
             throw new BrainFlowError (res, 'Could not get version info');
         }
         return out[0].substring(0, len[0]);
+    }
+
+    public static getSerialPorts(boardId: BoardIds): string[]
+    {
+        const len = [0];
+        let out = ['\0'.repeat(4096)];
+        const res =
+            BoardControllerDLL.getInstance().getSerialPorts(boardId, out, len, out[0].length);
+        if (res !== BrainFlowExitCodes.STATUS_OK)
+        {
+            throw new BrainFlowError (res, 'Could not get serial ports');
+        }
+        const ports = out[0].substring(0, len[0]);
+        return ports ? ports.split(',') : [];
     }
 
     public static setLogLevel(logLevel: LogLevels): void

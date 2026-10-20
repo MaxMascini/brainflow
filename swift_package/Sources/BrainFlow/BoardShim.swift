@@ -332,6 +332,23 @@ public final class BoardShim {
         try getVersion(function: \.get_version_board_controller)
     }
 
+    public static func get_serial_ports(board_id: Int) throws -> [String] {
+        let maxLength = 4096
+        var bytes = [CChar](repeating: 0, count: maxLength)
+        var length: CInt = 0
+        try bytes.withUnsafeMutableBufferPointer { pointer in
+            try BoardShimNative.withBoard { native in
+                try checkBrainFlowExitCode(native.get_serial_ports(CInt(board_id), pointer.baseAddress, &length, CInt(maxLength)), "Error in get_serial_ports")
+            }
+        }
+        let ports = String(bytes: bytes.prefix(Int(length)).map { UInt8(bitPattern: $0) }, encoding: .utf8) ?? ""
+        return ports.isEmpty ? [] : ports.split(separator: ",").map(String.init)
+    }
+
+    public static func get_serial_ports(board_id: BoardIds) throws -> [String] {
+        try get_serial_ports(board_id: board_id.rawValue)
+    }
+
     public static func get_board_descr(board_id: Int, preset: BrainFlowPresets = .DEFAULT_PRESET) throws -> String {
         try getStringBoardInfo(board_id: board_id, preset: preset, maxLength: 16_000, function: \.get_board_descr)
     }
@@ -561,6 +578,7 @@ final class BoardShimNative {
     let set_log_file_board_controller: @convention(c) (UnsafePointer<CChar>?) -> CInt
     let log_message_board_controller: @convention(c) (CInt, UnsafeMutablePointer<CChar>?) -> CInt
     let get_version_board_controller: VersionFunction
+    let get_serial_ports: @convention(c) (CInt, UnsafeMutablePointer<CChar>?, UnsafeMutablePointer<CInt>?, CInt) -> CInt
 
     let get_board_descr: BoardInfoStringFunction
     let get_sampling_rate: BoardInfoIntFunction
@@ -625,6 +643,7 @@ final class BoardShimNative {
         set_log_file_board_controller = try library.symbol("set_log_file_board_controller", as: type(of: set_log_file_board_controller))
         log_message_board_controller = try library.symbol("log_message_board_controller", as: type(of: log_message_board_controller))
         get_version_board_controller = try library.symbol("get_version_board_controller", as: type(of: get_version_board_controller))
+        get_serial_ports = try library.symbol("get_serial_ports", as: type(of: get_serial_ports))
         get_board_descr = try library.symbol("get_board_descr", as: type(of: get_board_descr))
         get_sampling_rate = try library.symbol("get_sampling_rate", as: type(of: get_sampling_rate))
         get_package_num_channel = try library.symbol("get_package_num_channel", as: type(of: get_package_num_channel))

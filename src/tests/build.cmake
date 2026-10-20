@@ -33,6 +33,8 @@ SET (TESTS_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/utils/bluetooth/socket_bluetooth_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/utils/bluetooth/bluetooth_functions_unittest.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/utils/data_buffer_unittest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/serial_ports.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/utils/serial_ports_unittest.cpp
 )
 
 add_executable(

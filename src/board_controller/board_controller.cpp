@@ -92,18 +92,19 @@ int prepare_session (int board_id, const char *json_brainflow_input_params)
     {
         return res;
     }
-    res = autodetect_serial_port (board_id, params);
-    if (res != (int)BrainFlowExitCodes::STATUS_OK)
-    {
-        return res;
-    }
 
+    // key is built from params sent by user, other methods look up the board using them
     std::pair<int, struct BrainFlowInputParams> key = get_key (board_id, params);
     if (boards.find (key) != boards.end ())
     {
         Board::board_logger->error (
             "Board with id {} and the same config already exists", board_id);
         return (int)BrainFlowExitCodes::ANOTHER_BOARD_IS_CREATED_ERROR;
+    }
+    res = autodetect_serial_port (board_id, params);
+    if (res != (int)BrainFlowExitCodes::STATUS_OK)
+    {
+        return res;
     }
 
     std::shared_ptr<Board> board = NULL;

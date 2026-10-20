@@ -396,6 +396,7 @@ jobs:
       run: dotnet run --project $GITHUB_WORKSPACE/csharp_package/brainflow/examples/signal_processing_regression
       env:
         LD_LIBRARY_PATH: ${{ github.workspace }}/installed/lib
+        DYLD_LIBRARY_PATH: ${{ github.workspace }}/installed/lib
     - name: Signal Processing Regression Rust
       run: cargo test --manifest-path $GITHUB_WORKSPACE/rust_package/brainflow/Cargo.toml data_filter::tests
       env:

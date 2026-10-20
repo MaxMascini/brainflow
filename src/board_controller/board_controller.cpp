@@ -677,7 +677,7 @@ static std::string join_ports (const std::vector<std::string> &ports)
 int get_serial_ports (int board_id, char *ports, int *len, int max_len)
 {
     std::vector<std::string> candidates =
-        filter_serial_ports (list_serial_ports (), get_board_usb_ids (board_id));
+        filter_serial_ports (list_serial_ports (), get_board_usb_id (board_id));
     return copy_string_to_buffer (join_ports (candidates), ports, len, max_len);
 }
 
@@ -687,31 +687,31 @@ int get_serial_ports (int board_id, char *ports, int *len, int max_len)
 
 int autodetect_serial_port (int board_id, struct BrainFlowInputParams &params)
 {
-    std::vector<UsbId> ids = get_board_usb_ids (board_id);
-    if ((!params.serial_port.empty ()) || (ids.empty ()))
+    UsbId id = get_board_usb_id (board_id);
+    if ((!params.serial_port.empty ()) || (id.vid < 0))
     {
         return (int)BrainFlowExitCodes::STATUS_OK;
     }
-    std::vector<std::string> candidates = filter_serial_ports (list_serial_ports (), ids);
+    std::vector<std::string> candidates = filter_serial_ports (list_serial_ports (), id);
     int res = pick_serial_port (candidates, params.serial_port);
     if (candidates.empty ())
     {
         Board::board_logger->error ("serial port not set and no device with usb id {:04x}:{:04x} "
                                     "found for board {}, set serial_port explicitly",
-            ids[0].vid, ids[0].pid, board_id);
+            id.vid, id.pid, board_id);
     }
     else if (res != (int)BrainFlowExitCodes::STATUS_OK)
     {
         Board::board_logger->error (
             "serial port not set and found {} devices with usb id {:04x}:{:04x} for board {}: "
             "{}. Other adapters with the same usb chip match too, set serial_port explicitly",
-            candidates.size (), ids[0].vid, ids[0].pid, board_id, join_ports (candidates));
+            candidates.size (), id.vid, id.pid, board_id, join_ports (candidates));
     }
     else
     {
         Board::board_logger->warn ("serial port not set, using {} (matched by usb id "
                                    "{:04x}:{:04x} only)",
-            params.serial_port, ids[0].vid, ids[0].pid);
+            params.serial_port, id.vid, id.pid);
     }
     return res;
 }

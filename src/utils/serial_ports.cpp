@@ -1,6 +1,6 @@
 #include <algorithm>
-#include <ctype.h>
 #include <fstream>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "brainflow_constants.h"
@@ -9,6 +9,9 @@
 #ifdef _WIN32
 #include <windows.h>
 
+#include <initguid.h>
+
+#include <devguid.h>
 #include <setupapi.h>
 #pragma comment(lib, "Setupapi.lib")
 #endif
@@ -30,44 +33,28 @@
 #endif
 
 
-static bool compare_ports (const SerialPortInfo &a, const SerialPortInfo &b)
-{
-    return a.port < b.port;
-}
-
-static bool parse_hex_after (const std::string &str, const std::string &prefix, int &value)
-{
-    size_t pos = str.find (prefix);
-    if ((pos == std::string::npos) || (pos + prefix.size () + 4 > str.size ()))
-    {
-        return false;
-    }
-    std::string digits = str.substr (pos + prefix.size (), 4);
-    char *end = NULL;
-    long res = strtol (digits.c_str (), &end, 16);
-    if (*end != '\0')
-    {
-        return false;
-    }
-    value = (int)res;
-    return true;
-}
-
 bool parse_hardware_id (const std::string &hw_id, int &vid, int &pid)
 {
-    std::string upper = hw_id;
-    std::transform (upper.begin (), upper.end (), upper.begin (), ::toupper);
-    return parse_hex_after (upper, "VID_", vid) && parse_hex_after (upper, "PID_", pid);
+    size_t vid_pos = hw_id.find ("VID_");
+    size_t pid_pos = hw_id.find ("PID_");
+    unsigned int v = 0;
+    unsigned int p = 0;
+    if ((vid_pos == std::string::npos) || (pid_pos == std::string::npos) ||
+        (sscanf (hw_id.c_str () + vid_pos, "VID_%4x", &v) != 1) ||
+        (sscanf (hw_id.c_str () + pid_pos, "PID_%4x", &p) != 1))
+    {
+        return false;
+    }
+    vid = (int)v;
+    pid = (int)p;
+    return true;
 }
 
 #ifdef _WIN32
 static std::vector<SerialPortInfo> list_serial_ports_windows ()
 {
     std::vector<SerialPortInfo> ports;
-    // guid of ports device class
-    static const GUID ports_guid = {
-        0x4d36e978, 0xe325, 0x11ce, {0xbf, 0xc1, 0x08, 0x00, 0x2b, 0xe1, 0x03, 0x18}};
-    HDEVINFO dev_info = SetupDiGetClassDevsA (&ports_guid, NULL, NULL, DIGCF_PRESENT);
+    HDEVINFO dev_info = SetupDiGetClassDevsA (&GUID_DEVCLASS_PORTS, NULL, NULL, DIGCF_PRESENT);
     if (dev_info == INVALID_HANDLE_VALUE)
     {
         return ports;
@@ -169,7 +156,8 @@ std::vector<SerialPortInfo> list_serial_ports ()
 #elif defined(__linux__)
     ports = list_serial_ports_sysfs ("/sys/class/tty");
 #endif
-    std::sort (ports.begin (), ports.end (), compare_ports);
+    std::sort (ports.begin (), ports.end (),
+        [] (const SerialPortInfo &a, const SerialPortInfo &b) { return a.port < b.port; });
     return ports;
 }
 
@@ -230,46 +218,41 @@ std::vector<SerialPortInfo> list_serial_ports_sysfs (const std::string &tty_dir)
         }
     }
     closedir (dir);
-    std::sort (ports.begin (), ports.end (), compare_ports);
 #endif
     return ports;
 }
 
 std::vector<std::string> filter_serial_ports (
-    const std::vector<SerialPortInfo> &ports, const std::vector<UsbId> &ids)
+    const std::vector<SerialPortInfo> &ports, const UsbId &id)
 {
     std::vector<std::string> res;
     for (const SerialPortInfo &info : ports)
     {
-        for (const UsbId &id : ids)
+        if ((info.vid == id.vid) && (info.pid == id.pid))
         {
-            if ((info.vid == id.vid) && (info.pid == id.pid))
-            {
-                res.push_back (info.port);
-                break;
-            }
+            res.push_back (info.port);
         }
     }
     return res;
 }
 
-std::vector<UsbId> get_board_usb_ids (int board_id)
+UsbId get_board_usb_id (int board_id)
 {
     switch (static_cast<BoardIds> (board_id))
     {
         // ftdi ft231x dongle
         case BoardIds::CYTON_BOARD:
         case BoardIds::CYTON_DAISY_BOARD:
-            return {{0x0403, 0x6015}};
+            return {0x0403, 0x6015};
         // silicon labs bled112 dongle
         case BoardIds::GANGLION_BOARD:
         case BoardIds::BRAINBIT_BLED_BOARD:
         case BoardIds::MUSE_S_BLED_BOARD:
         case BoardIds::MUSE_2_BLED_BOARD:
         case BoardIds::MUSE_2016_BLED_BOARD:
-            return {{0x2458, 0x0001}};
+            return {0x2458, 0x0001};
         default:
-            return {};
+            return {-1, -1};
     }
 }
 

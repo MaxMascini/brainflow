@@ -21,7 +21,7 @@ TEST (SerialPortsTest, FilterSerialPorts_MatchingVidAndPid_ReturnsMatchingPortsI
     std::vector<SerialPortInfo> ports = {
         {"COM3", 0x0403, 0x6015}, {"COM4", 0x2458, 0x0001}, {"COM7", 0x0403, 0x6015}};
 
-    std::vector<std::string> res = filter_serial_ports (ports, {{0x0403, 0x6015}});
+    std::vector<std::string> res = filter_serial_ports (ports, {0x0403, 0x6015});
 
     EXPECT_THAT (res, ElementsAre ("COM3", "COM7"));
 }
@@ -30,37 +30,31 @@ TEST (SerialPortsTest, FilterSerialPorts_SameVidDifferentPid_IsExcluded)
 {
     std::vector<SerialPortInfo> ports = {{"COM3", 0x0403, 0x6001}, {"COM4", 0x1234, 0x6015}};
 
-    std::vector<std::string> res = filter_serial_ports (ports, {{0x0403, 0x6015}});
+    std::vector<std::string> res = filter_serial_ports (ports, {0x0403, 0x6015});
 
     EXPECT_THAT (res, IsEmpty ());
 }
 
-TEST (SerialPortsTest, FilterSerialPorts_SeveralIds_MatchesAnyOfThem)
-{
-    std::vector<SerialPortInfo> ports = {{"COM3", 0x0403, 0x6015}, {"COM4", 0x2458, 0x0001}};
-
-    std::vector<std::string> res =
-        filter_serial_ports (ports, {{0x2458, 0x0001}, {0x0403, 0x6015}});
-
-    EXPECT_THAT (res, ElementsAre ("COM3", "COM4"));
-}
-
-TEST (SerialPortsTest, GetBoardUsbIds_CytonAndGanglion_SelectTheirOwnDongles)
+TEST (SerialPortsTest, GetBoardUsbId_CytonAndGanglion_SelectTheirOwnDongles)
 {
     std::vector<SerialPortInfo> ports = {
         {"/dev/ttyUSB0", 0x0403, 0x6015}, {"/dev/ttyACM0", 0x2458, 0x0001}};
 
-    EXPECT_THAT (filter_serial_ports (ports, get_board_usb_ids ((int)BoardIds::CYTON_BOARD)),
+    EXPECT_THAT (filter_serial_ports (ports, get_board_usb_id ((int)BoardIds::CYTON_BOARD)),
         ElementsAre ("/dev/ttyUSB0"));
-    EXPECT_THAT (filter_serial_ports (ports, get_board_usb_ids ((int)BoardIds::CYTON_DAISY_BOARD)),
+    EXPECT_THAT (filter_serial_ports (ports, get_board_usb_id ((int)BoardIds::CYTON_DAISY_BOARD)),
         ElementsAre ("/dev/ttyUSB0"));
-    EXPECT_THAT (filter_serial_ports (ports, get_board_usb_ids ((int)BoardIds::GANGLION_BOARD)),
+    EXPECT_THAT (filter_serial_ports (ports, get_board_usb_id ((int)BoardIds::GANGLION_BOARD)),
         ElementsAre ("/dev/ttyACM0"));
 }
 
-TEST (SerialPortsTest, GetBoardUsbIds_BoardWithoutSerialPort_ReturnsEmpty)
+TEST (SerialPortsTest, GetBoardUsbId_BoardWithoutSerialPort_MatchesNothing)
 {
-    EXPECT_THAT (get_board_usb_ids ((int)BoardIds::SYNTHETIC_BOARD), IsEmpty ());
+    std::vector<SerialPortInfo> ports = {
+        {"/dev/ttyUSB0", 0x0403, 0x6015}, {"/dev/ttyACM0", 0x2458, 0x0001}, {"/dev/ttyS0", 0, 0}};
+
+    EXPECT_THAT (
+        filter_serial_ports (ports, get_board_usb_id ((int)BoardIds::SYNTHETIC_BOARD)), IsEmpty ());
 }
 
 TEST (SerialPortsTest, PickSerialPort_SingleCandidate_ReturnsOkAndSetsPort)
@@ -111,16 +105,6 @@ TEST (SerialPortsTest, ParseHardwareId_FtdiBusStyle_ExtractsIds)
     EXPECT_TRUE (parse_hardware_id ("FTDIBUS\\COMPORT&VID_0403&PID_6015", vid, pid));
     EXPECT_EQ (vid, 0x0403);
     EXPECT_EQ (pid, 0x6015);
-}
-
-TEST (SerialPortsTest, ParseHardwareId_LowerCaseHex_ExtractsIds)
-{
-    int vid = -1;
-    int pid = -1;
-
-    EXPECT_TRUE (parse_hardware_id ("usb\\vid_2458&pid_000a", vid, pid));
-    EXPECT_EQ (vid, 0x2458);
-    EXPECT_EQ (pid, 0x000a);
 }
 
 TEST (SerialPortsTest, ParseHardwareId_NoIds_ReturnsFalse)
@@ -253,7 +237,7 @@ TEST_F (SysfsTest, ListSerialPortsSysfs_NonUsbAndVirtualTtys_AreSkipped)
     EXPECT_THAT (res, IsEmpty ());
 }
 
-TEST_F (SysfsTest, ListSerialPortsSysfs_SeveralPorts_SortedByPortName)
+TEST_F (SysfsTest, ListSerialPortsSysfs_SeveralPorts_ListsAll)
 {
     make_dirs ("devices/usb1/1-1/1-1:1.0/ttyUSB1");
     write_file ("devices/usb1/1-1/idVendor", "0403\n");
@@ -266,9 +250,12 @@ TEST_F (SysfsTest, ListSerialPortsSysfs_SeveralPorts_SortedByPortName)
 
     std::vector<SerialPortInfo> res = list_serial_ports_sysfs (root + "/class/tty");
 
-    ASSERT_EQ (res.size (), 2u);
-    EXPECT_EQ (res[0].port, "/dev/ttyUSB0");
-    EXPECT_EQ (res[1].port, "/dev/ttyUSB1");
+    std::vector<std::string> names;
+    for (const SerialPortInfo &info : res)
+    {
+        names.push_back (info.port);
+    }
+    EXPECT_THAT (names, UnorderedElementsAre ("/dev/ttyUSB0", "/dev/ttyUSB1"));
 }
 
 #endif

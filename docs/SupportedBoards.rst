@@ -228,7 +228,7 @@ Cyton
 To create such board you need to specify the following board ID and fields of BrainFlowInputParams object:
 
 - :code:`BoardIds.CYTON_BOARD`
-- :code:`serial_port`, e.g. COM3, /dev/ttyUSB0, etc
+- :code:`serial_port` (optional), e.g. COM3, /dev/ttyUSB0, etc. If not set, BrainFlow looks for the dongle by its USB ID (0403:6015) and fails if zero or several are found. Other adapters with the same FTDI chip also match, so set it explicitly if such devices are connected. Use :code:`BoardShim.get_serial_ports` to list matching ports
 
 Initialization Example:
 
@@ -307,7 +307,7 @@ Cyton Daisy
 To create such board you need to specify the following board ID and fields of BrainFlowInputParams object:
 
 - :code:`BoardIds.CYTON_DAISY_BOARD`
-- :code:`serial_port`, e.g. COM3, /dev/ttyUSB0, etc
+- :code:`serial_port` (optional), e.g. COM3, /dev/ttyUSB0, etc. If not set, BrainFlow looks for the dongle by its USB ID (0403:6015) and fails if zero or several are found. Other adapters with the same FTDI chip also match, so set it explicitly if such devices are connected. Use :code:`BoardShim.get_serial_ports` to list matching ports
 
 Initialization Example:
 
